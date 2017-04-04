@@ -40,9 +40,16 @@ This code was designed for a FLIR model T62101 or T450sc. It may work on other F
 #### STEP 4: RUN ANALYSIS:
 1. Click "Step 4: Run Analysis" button to start going through your images 
 2. The first part of the analysis is to classify the visible image using a pre-defined decision tree.This decision tree was built for the Coal Oil Point Reserve site. Use caution if using in a different area.
+	1. A figure will pop up with the original visible image, classified image, and a colorbar. The colorbar includes the percentages for each of the classes present in the image. 
+	2. The program will automatically save the classified image. An additional folder will be added to the directory containing the original folders titled "Classification". The image will be saved into this new Classification folder with the originalname_class.jpg. 
 3. The second part of the analysis is to calculate the corrected temperature product. See Analysis Steps and Equations section for details on calculations.
+	1. A figure will pop up with the original thermal image and the corrected temperature image. 
+	2. The program will automatically save the corrected temperature and exitance images. An additional folder will be added to the directory containing the original folders titled "Temp_Correction". The image will be saved into this new Classification folder with the 4 files: originalfilename_Temp.jpg, originalfilename_Temp.csv, originalfilename_Exitance.jpg, and originalfilename_Exitance.csv. 
+	3. Additional file will be saved to this folder if any of the additional outputs were selected in Step 3: Designate Outputs.
 4. A dialog window will appear saying "Classify next image?". To move on to the next image, hit yes. If you are done, hit no. If you select no, and start the program over, it will reclassify and reanalyze the images listed.
 5. After the program has looped through all the images, the last part of the analysis will output the classification results and the temperature correction results into two separate csv files.
+	1. A dialog box will appear for the user to select the output and name for the classification results.  Click "Output to *.csv" button to output this current sessions classification results. The program will not output results from images that were classified outside of the matlab session. 
+	2. A second dialog box will for the user to select the output and name for the temperature correction results.  Click "Output to *.csv" button to output this current sessions temperature correction results. The program will not output results from images that were run outside of the matlab session. 
 4. When the saving is complete a dialog box will appear saying "Completed Processing."
 
 #### Analysis Steps and Equations:
