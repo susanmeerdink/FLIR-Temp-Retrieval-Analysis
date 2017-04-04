@@ -1,0 +1,62 @@
+# 1864
+[fileInfo]=irFileOpen(pwd,'IR_1864.jpg','jpg','false');
+change_output
+finalImage=integer2temp(fileInfo,'false');
+imwrite(fileInfo.overlayDefaultVisible,'output/vis_1864.jpg');
+csvwrite('output/Uncor_temp_1864.dat',finalImage);
+gui_image_intro_batch_flir
+emiss_image
+dwr=314.2;
+unCorTem=finalImage;
+emiss=emiss;
+finalImage=finalImage;
+Temp_Exit_Correction;
+csvwrite('output/BB_exit_1864.dat',Exit_at_BB);
+csvwrite('output/Surf_exit_1864.dat',Surf_exit);
+csvwrite('output/Surf_temp_1864.dat',Temp_calcul_from_Surf_exit);
+csvwrite('output/emiss_1864.dat',emiss);
+csvwrite('output/surf_exit_class_1864.dat',Surf_exit_using_class_emiss);
+csvwrite('output/surf_temp_class_1864.dat',Surf_temp_using_class_emiss);
+output_pro
+# 1866
+[fileInfo]=irFileOpen(pwd,'IR_1866.jpg','jpg','false');
+change_output
+finalImage=integer2temp(fileInfo,'false');
+imwrite(fileInfo.overlayDefaultVisible,'output/vis_1866.jpg');
+csvwrite('output/Uncor_temp_1866.dat',finalImage);
+gui_image_intro_batch_flir
+emiss_image
+dwr=314.7;
+unCorTem=finalImage;
+emiss=emiss;
+finalImage=finalImage;
+Temp_Exit_Correction;
+csvwrite('output/BB_exit_1866.dat',Exit_at_BB);
+csvwrite('output/Surf_exit_1866.dat',Surf_exit);
+csvwrite('output/Surf_temp_1866.dat',Temp_calcul_from_Surf_exit);
+csvwrite('output/emiss_1866.dat',emiss);
+csvwrite('output/surf_exit_class_1866.dat',Surf_exit_using_class_emiss);
+csvwrite('output/surf_temp_class_1866.dat',Surf_temp_using_class_emiss);
+output_pro
+(COPY variables with cut and paste)
+Clear All Vars in Batch_classify
+# 1869
+[fileInfo]=irFileOpen(pwd,'IR_1869.jpg','jpg','false');
+change_output
+finalImage=integer2temp(fileInfo,'false');
+imwrite(fileInfo.overlayDefaultVisible,'output/vis_1869.jpg');
+csvwrite('output/Uncor_temp_1869.dat',finalImage);
+gui_image_intro_batch_flir
+emiss_image
+dwr=314.7;
+unCorTem=finalImage;
+emiss=emiss;
+finalImage=finalImage;
+Temp_Exit_Correction;
+csvwrite('output/BB_exit_1869.dat',Exit_at_BB);
+csvwrite('output/Surf_exit_1869.dat',Surf_exit);
+csvwrite('output/Surf_temp_1869.dat',Temp_calcul_from_Surf_exit);
+csvwrite('output/emiss_1869.dat',emiss);
+csvwrite('output/surf_exit_class_1869.dat',Surf_exit_using_class_emiss);
+csvwrite('output/surf_temp_class_1869.dat',Surf_temp_using_class_emiss);
+output_pro
