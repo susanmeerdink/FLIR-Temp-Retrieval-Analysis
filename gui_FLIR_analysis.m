@@ -304,6 +304,7 @@ for img = 1: size(fileInfo,2) %loop through images
     if isdir(cflder)== 0 %If the directory doesn't exist make it
         mkdir(cflder)
     end
+    saveas(gca, strcat(cflder,new_name,'_fractions.jpg'))
     fname = strcat(cflder,titleName,'_Classification.jpg');
     imwrite(imgFrac,cmap,fname);
     
