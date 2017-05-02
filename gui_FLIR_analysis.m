@@ -304,7 +304,7 @@ for img = 1: size(fileInfo,2) %loop through images
     if isdir(cflder)== 0 %If the directory doesn't exist make it
         mkdir(cflder)
     end
-    saveas(gca, strcat(cflder,new_name,'_fractions.jpg'))
+    saveas(gca, strcat(cflder,titleName,'_Classification_fractions.jpg'))
     fname = strcat(cflder,titleName,'_Classification.jpg');
     imwrite(imgFrac,cmap,fname);
     
@@ -379,6 +379,7 @@ for img = 1: size(fileInfo,2) %loop through images
         mkdir(cflder)
     end
     %output Temperature results
+    saveas(gca, strcat(cflder,titleName,'_Temp_Orig&Cor.jpg'))
     fname = strcat(cflder,titleName,'_Temp');
     csvwrite(strcat(fname,'.csv'),imgTempSurfEmiss)
     outImage = mat2gray(round(imgTempSurfEmiss),[min(min(imgTempSurfEmiss)) max(max(imgTempSurfEmiss))]);
