@@ -22,7 +22,7 @@ function varargout = gui_FLIR_analysis(varargin)
 
 % Edit the above text to modify the response to help gui_FLIR_analysis
 
-% Last Modified by GUIDE v2.5 04-Apr-2017 11:42:08
+% Last Modified by GUIDE v2.5 03-May-2017 13:23:10
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -508,3 +508,12 @@ function check_95Temp_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_95Temp
+
+
+% --- Executes on button press in resetButton.
+function resetButton_Callback(hObject, eventdata, handles)
+% hObject    handle to resetButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.ImageList,'String',[])
+evalin('base','clear fileInfo')
