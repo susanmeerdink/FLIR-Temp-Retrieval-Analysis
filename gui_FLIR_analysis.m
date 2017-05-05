@@ -22,7 +22,7 @@ function varargout = gui_FLIR_analysis(varargin)
 
 % Edit the above text to modify the response to help gui_FLIR_analysis
 
-% Last Modified by GUIDE v2.5 03-May-2017 13:23:10
+% Last Modified by GUIDE v2.5 04-May-2017 09:28:05
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -109,8 +109,6 @@ catch %If fileInfo doesn't exist
     fileInfo = [];
 end 
 
-inital_list = cellstr(get(handles.ImageList,'String'));
-
 %Loop through and open files
 if iscell(fnames) == 0  %If no or one file are selected, fnames is returned as a string NOT cell
     if fnames == 0 %If no files are selected
@@ -122,15 +120,50 @@ if iscell(fnames) == 0  %If no or one file are selected, fnames is returned as a
 else %if multiple files are selected
     for n = 1:size(fnames,2) %Loop through files   
         %Setting up variables for workspace and future analysis
-        fileInfo{size(fileInfo,1)+1} = irFileOpen(folder,fnames{n},'jpg','false'); %Opens each image        
+        fileInfo{size(fileInfo,2)+1} = irFileOpen(folder,fnames{n},'jpg','false'); %Opens each image        
         
     end
 
 end
 %Assign final variables to workspace & update GUI
-new_list = [inital_list,fnames];
-set(handles.ImageList,'String',new_list)
-assignin('base','fileInfo',fileInfo);
+new_table = cell(size(fnames,2),5);
+new_table(:,1) = fnames;
+new_table(:,2:5) = cell(size(fnames,2),4);
+set(handles.ImageList,'Data',new_table)
+assignin('base','table',new_table)
+assignin('base','fileInfo',fileInfo)
+assignin('base','folder',folder)
+
+% --- Executes on button press in Step2.
+function Step2_Callback(hObject, eventdata, handles)
+% hObject    handle to Step2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+folder = evalin('base','folder');
+new_table = evalin('base','table');
+
+[fnames,folder] = uigetfile(strcat(folder,'*.CSV'),'Select CSV Correction File','MultiSelect','off');
+if isequal(fnames,0)
+    errordlg('Input file is not selected!') 
+else
+    M = readtable(strcat(folder,fnames)); % Skip the first row
+    for l = 1: size(new_table,1)
+        for i = 1:size(M,1)
+            if strcmp(new_table(l,1), table2cell(M(i,1))) == 1 || strcmp(new_table(l,1), strcat(table2cell(M(i,1)),'.jpg')) == 1
+                new_table(l,2) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,2)))));
+                new_table(l,3) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,3)))));
+                new_table(l,4) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,4)))));
+                new_table(l,5) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,5)))));
+            else
+                continue
+            end
+        end
+    end
+    
+    %Assign final variables to workspace & update GUI
+    set(handles.ImageList,'Data',new_table)
+    assignin('base','table',new_table);
+end
 
 function EM_NPV_Callback(hObject, eventdata, handles)
 % hObject    handle to EM_NPV (see GCBO)
@@ -207,16 +240,18 @@ function EM_DWR_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of text_DWR as text
 %        str2double(get(hObject,'String')) returns contents of text_DWR as a double
 
-% --- Executes on button press in Step3.
-function Step3_Callback(hObject, eventdata, handles)
-% hObject    handle to Step3 (see GCBO)
+% --- Executes on button press in Step5.
+function Step5_Callback(hObject, eventdata, handles)
+% hObject    handle to Step5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 evalin('base','load tree') %Load in the classification tree for future steps
 evalin('base','load treeUpdated') %Load in the classification tree for future steps
 fileInfo = evalin('base','fileInfo');
+folder = evalin('base','folder');
 t0 = evalin('base','t0');
 tree = evalin('base','tree');
+table = evalin('base','table'); 
 versionTest = version('-release');
 
 % 1. Calculate Fractional Cover for RGB (Visible) Image
@@ -315,36 +350,66 @@ for img = 1: size(fileInfo,2) %loop through images
     imgEmis(imgEmis == 2) = str2num(get(handles.EM_Shade,'String')); % Assigning emissivity values to class 'Shade'
     imgEmis(imgEmis == 3) = str2num(get(handles.EM_GV,'String')); % Assigning emissivity values to class 'GV'
     imgEmis(imgEmis > 3) = 0.95; % Assigning emissivity value of 0.95 for Blue and Yellow Flowers
-    dwr = str2num(get(handles.EM_DWR,'String')); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
     sig = (5.670373*1e-08); % Stefen boltzmen constant
+    
+    % Step 2: Get correction factors from table
+    if isempty(cell2mat(table(img,2))) == 1
+        height = fileInfo{img}.objDist;
+    else
+        height = str2num(cell2mat(table(img,2))); % Camera height in meters
+    end
+    if isempty(cell2mat(table(img,5))) ==1
+        airT = 20;
+    else
+        airT = str2num(cell2mat(table(img,5))); % Air temperature of environment in Celsius
+    end
+    
+    if isempty(cell2mat(table(img,3))) == 1 && isempty(cell2mat(table(img,4))) == 1 % If both are empty
+        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT};
+        ldw = 436.0;
+    elseif isempty(cell2mat(table(img,3))) == 1 && isempty(cel2mat(table(img,4))) == 0
+        rh = str2num(cell2mat(table(img,3))); % Relative Humidity in percent
+        ldw = 436.0;
+        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'RH',rh};
+    elseif isempty(cell2mat(table(img,3))) == 0 && isempty(cell2mat(table(img,4))) == 1
+        ldw = str2num(cell2mat(table(img,4))); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
+        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'longwave',ldw};
+    else % If both are in the table
+        rh = str2num(cell2mat(table(img,3))); % Relative Humidity in percent
+        ldw = str2num(cell2mat(table(img,4))); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
+        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'RH',rh,'longwave',ldw};
+    end
 
     % Step 3: Calculate Exitance of image (assuming blackbody aka emissivity of 1)
+    imgTempCorrFactors = integer2temp(fileInfo{img},true,corrFactors);
+    
+    % Code for Dar's Exitance Images and Intermediate Temperature Products
     imgTempUnCor = (fileInfo{img}.B./log(fileInfo{img}.R1./(fileInfo{img}.R2.*(fileInfo{img}.overlayDefaultThermal + fileInfo{img}.O))+fileInfo{img}.F));
     imgExitBB = (sig*((imgTempUnCor).^4)); % Exitance calculated from Temperature at BlackBody
-    imgExit95Emiss = imgExitBB - ((1-0.95)*dwr); % Exitance calculated from Temperature at 0.95 Emissivity
-    imgExitSurfEmiss = (imgExitBB -((1-imgEmis).*dwr)); % Retriving surface Exitance using pixel based emissivity and correcting for DWR 
+    imgExit95Emiss = imgExitBB - ((1-0.95)*ldw); % Exitance calculated from Temperature at 0.95 Emissivity
+    imgExitSurfEmiss = (imgExitBB -((1-imgEmis).*ldw)); % Retriving surface Exitance using pixel based emissivity and correcting for DWR 
     imgTemp95Emiss = (imgExitBB/(sig*0.95)).^0.25; % Retriving surface temperature using 0.95 Emissivity
-    imgTempSurfEmiss = (imgExitSurfEmiss./(imgEmis.*sig)).^0.25; % Surface Temperature using pixel based emissivity and applying DWR corrections
+    %imgTempSurfEmiss = (imgExitSurfEmiss./(imgEmis.*sig)).^0.25; % Surface Temperature using pixel based emissivity and applying DWR corrections
     
     %Get Temperature Stats 
-    tempStats(img,:) = [mean(mean(imgExitBB)),min(min(imgExitBB)),max(max(imgExitBB)), ...
+    tempStats(img,:) = [mean(mean(imgTempCorrFactors)),min(min(imgTempCorrFactors)),max(max(imgTempCorrFactors)), ...
+        mean(mean(imgExitBB)),min(min(imgExitBB)),max(max(imgExitBB)), ...
         mean(mean(imgExit95Emiss)),min(min(imgExit95Emiss)),max(max(imgExit95Emiss)), ...
         mean(mean(imgExitSurfEmiss)),min(min(imgExitSurfEmiss)),max(max(imgExitSurfEmiss)), ...
         mean(mean(imgTempUnCor)),min(min(imgTempUnCor)),max(max(imgTempUnCor)), ...
-        mean(mean(imgTemp95Emiss)),min(min(imgTemp95Emiss)),max(max(imgTemp95Emiss)), ...
-        mean(mean(imgTempSurfEmiss)),min(min(imgTempSurfEmiss)),max(max(imgTempSurfEmiss))];
+        mean(mean(imgTemp95Emiss)),min(min(imgTemp95Emiss)),max(max(imgTemp95Emiss))];
         
     %DISPLAY Temp Correction RESULTS
     %figuring out cmin and cmax for color bar
-    if min(min(imgTempUnCor)) < min(min(imgTempSurfEmiss))
+    if min(min(imgTempUnCor)) < min(min(imgTempCorrFactors))
         cmin = min(min(imgTempUnCor));
     else
-        cmin = min(min(imgTempSurfEmiss));
+        cmin = min(min(imgTempCorrFactors));
     end
-    if max(max(imgTempUnCor)) > max(max(imgTempSurfEmiss))
+    if max(max(imgTempUnCor)) > max(max(imgTempCorrFactors))
         cmax = max(max(imgTempUnCor));
     else
-        cmax = max(max(imgTempSurfEmiss));
+        cmax = max(max(imgTempCorrFactors));
     end
     
     %Plot original temperature image
@@ -366,29 +431,31 @@ for img = 1: size(fileInfo,2) %loop through images
     subplot(1,2,2) %Temperature Correction
     hold on
     title([titleName, ' Temp Correction'],'Interpreter','none')
-    imagesc(imgTempSurfEmiss); %Display image with scaled colors
+    imagesc(imgTempCorrFactors); %Display image with scaled colors
     colormap 'hot'
     caxis([cmin, cmax])
     h2 = colorbar;
     axis square; axis off
     hold on
     
-    %Save Temperature FILE TO Temp Folder
+    %Save Temperature file TO Temp Folder
     cflder = strcat(fileInfo{img}.name(1:ind-2), '\Temp_Correction\');
     if isdir(cflder)== 0 %If the directory doesn't exist make it
         mkdir(cflder)
     end
-    %output Temperature results
+    
+    % Output Temperature results
     saveas(gca, strcat(cflder,titleName,'_Temp_Orig&Cor.jpg'))
     fname = strcat(cflder,titleName,'_Temp');
-    csvwrite(strcat(fname,'.csv'),imgTempSurfEmiss)
-    outImage = mat2gray(round(imgTempSurfEmiss),[min(min(imgTempSurfEmiss)) max(max(imgTempSurfEmiss))]);
+    csvwrite(strcat(fname,'.csv'),imgTempCorrFactors)
+    outImage = mat2gray(round(imgTempCorrFactors),[min(min(imgTempCorrFactors)) max(max(imgTempCorrFactors))]);
     imwrite(outImage,strcat(fname,'.jpg'));
+    
     %Output Exitance results
-    fname = strcat(cflder,titleName,'_Exitance');
-    csvwrite(strcat(fname,'.csv'),imgExitSurfEmiss)
-    outImage = mat2gray(round(imgExitSurfEmiss),[min(min(imgExitSurfEmiss)) max(max(imgExitSurfEmiss))]);
-    imwrite(outImage,strcat(fname,'.jpg'));
+%     fname = strcat(cflder,titleName,'_Exitance');
+%     csvwrite(strcat(fname,'.csv'),imgExitSurfEmiss)
+%     outImage = mat2gray(round(imgExitSurfEmiss),[min(min(imgExitSurfEmiss)) max(max(imgExitSurfEmiss))]);
+%     imwrite(outImage,strcat(fname,'.jpg'));
     
     if get(handles.check_BBExit,'value') == 1 %If the user designated they want the Blackbody exitance image, save it
         fname = strcat(cflder,titleName,'_BBExitance');
@@ -431,7 +498,7 @@ for img = 1: size(fileInfo,2) %loop through images
 end
 
 %Output Classification Results
-outputFile = strcat('fractional_cover_stats_',datestr(now,'ddmmmyy'),'.csv');
+outputFile = strcat(folder,'fractional_cover_stats_',datestr(now,'ddmmmyy'),'.csv');
 [fileout,path] = uiputfile(outputFile,'Save fractional cover results');
 fid = fopen([path,char(fileout)],'w');
 fprintf(fid,'Filename,NPV,Shade,GV,Flower Blue, Flower Yellow\n');
@@ -443,15 +510,15 @@ end
 fclose(fid);
 
 %Output Temperature Results
-outputFile = strcat('temperature_correction_stats_',datestr(now,'ddmmmyy'),'.csv');
+outputFile = strcat(folder,'temperature_correction_stats_',datestr(now,'ddmmmyy'),'.csv');
 [fileout,path] = uiputfile(outputFile,'Save temperature correction results');
 fid = fopen([path,char(fileout)],'w');
-fprintf(fid,['Filename, Avg Exitance for BB, Min Exitance for BB, Max Exitance for BB,' ...
+fprintf(fid,['Filename, Avg Temperature for Corrected Image, Min Temperature for Corrected Image, Max Temperature for Corrected Image,' ...
+    'Avg Exitance for BB, Min Exitance for BB, Max Exitance for BB,' ...
     'Avg Exitance for 0.95 Emissivity, Min Exitance for 0.95 Emissivity, Max Exitance for 0.95 Emissivity,' ...
     'Avg Exitance for Class Emissivity, Min Exitance for Class Emissivity, Max Exitance for Class Emissivity,' ...
     'Avg Temperature for BB, Min Temperature for BB, Max Temperature for BB,'...
-    'Avg Temperature for 0.95 Emissivity, Min Temperature for 0.95 Emissivity, Max Temperature for 0.95 Emissivity,'...
-    'Avg Temperature for Class Emissivity, Min Temperature for Class Emissivity, Max Temperature for Class Emissivity\n']);
+    'Avg Temperature for 0.95 Emissivity, Min Temperature for 0.95 Emissivity, Max Temperature for 0.95 Emissivity \n']);
 for i = 1:size(tempStats,1)
     fprintf(fid,'%s%s',char(fileInfo{img}.name),',');
     fprintf(fid,'%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f',tempStats(i,:));
@@ -482,6 +549,28 @@ function check_BBExit_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of check_BBExit
 
+% --- Executes on button press in check_BBExit.
+function check_BBTemp_Callback(hObject, eventdata, handles)
+% hObject    handle to check_BBExit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of check_BBExit
+
+
+% --- Executes on button press in resetButton.
+function resetButton_Callback(hObject, eventdata, handles)
+% hObject    handle to resetButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.ImageList,'Data',cell(4,5))
+evalin('base','clear fileInfo')
+set(handles.check_BBExit,'value',0) 
+set(handles.check_95Exit,'value',0)
+set(handles.check_BBTemp,'value',0)
+set(handles.check_95Temp,'value',0)
+
+
 
 % --- Executes on button press in check_95Exit.
 function check_95Exit_Callback(hObject, eventdata, handles)
@@ -492,15 +581,6 @@ function check_95Exit_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of check_95Exit
 
 
-% --- Executes on button press in check_BBTemp.
-function check_BBTemp_Callback(hObject, eventdata, handles)
-% hObject    handle to check_BBTemp (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of check_BBTemp
-
-
 % --- Executes on button press in check_95Temp.
 function check_95Temp_Callback(hObject, eventdata, handles)
 % hObject    handle to check_95Temp (see GCBO)
@@ -508,12 +588,3 @@ function check_95Temp_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_95Temp
-
-
-% --- Executes on button press in resetButton.
-function resetButton_Callback(hObject, eventdata, handles)
-% hObject    handle to resetButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-set(handles.ImageList,'String',[])
-evalin('base','clear fileInfo')

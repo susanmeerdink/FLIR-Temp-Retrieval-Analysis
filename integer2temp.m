@@ -96,7 +96,8 @@ else
 end
 
 % Distribute file info structure elements into appropriate variables
-integerImg = fileInfo.data;
+%integerImg = fileInfo.data; % This was the original code, but we are interested in only the overlapped area of the image
+integerImg = fileInfo.overlayDefaultThermal;
 R1 = fileInfo.R1;
 R2 = fileInfo.R2;
 B = fileInfo.B;
@@ -222,29 +223,39 @@ if correction %generate corrected temperature (Kelvin) for each pixel
         emiss = emissMap;
         dist = distMap;
     elseif exist('distMap') && exist('emissMap') && ~exist('reflectMap')
-        rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
+        %rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss; %Original code for full thermal image
+        rEmiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*reflectObjEmiss; % Code for just overlaid area
         emiss = emissMap;
         dist = distMap;
     elseif exist('distMap') && ~exist('emissMap') && exist('reflectMap')
         rEmiss = reflectMap;
-        emiss = ones(fileInfo.height,fileInfo.width)*objEmiss;
+        %emiss = ones(fileInfo.height,fileInfo.width)*objEmiss; %Original code for full thermal image
+        emiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objEmiss; % Code of just overlaid area
         dist = distMap;
     elseif exist('distMap') && ~exist('emissMap') && ~exist('reflectMap')
-        rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
-        emiss = ones(fileInfo.height,fileInfo.width)*objEmiss;
+        %rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss; %Original code for full thermal image
+        rEmiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*reflectObjEmiss; % Code of just overlaid area
+        %emiss = ones(fileInfo.height,fileInfo.width)*objEmiss; %Original code for full thermal image
+        emiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objEmiss; % Code of just overlaid area
         dist = distMap;
     elseif ~exist('distMap') && exist('emissMap') && exist('reflectMap')
         rEmiss = reflectMap;
         emiss = emissMap;
-        dist = ones(fileInfo.height,fileInfo.width)*objDist;
+        %dist = ones(fileInfo.height,fileInfo.width)*objDist;
+        dist = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objDist;
     elseif ~exist('distMap') && exist('emissMap') && ~exist('reflectMap')
-        rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
+        %rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
+        rEmiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*reflectObjEmiss;
         emiss = emissMap;
-        dist = ones(fileInfo.height,fileInfo.width)*objDist;
+        %dist = ones(fileInfo.height,fileInfo.width)*objDist;
+        dist = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objDist;
     else
-        rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
-        emiss = ones(fileInfo.height,fileInfo.width)*objEmiss;
-        dist = ones(fileInfo.height,fileInfo.width)*objDist;
+%         rEmiss = ones(fileInfo.height,fileInfo.width)*reflectObjEmiss;
+%         emiss = ones(fileInfo.height,fileInfo.width)*objEmiss;
+%         dist = ones(fileInfo.height,fileInfo.width)*objDist;
+        rEmiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*reflectObjEmiss;
+        emiss = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objEmiss;
+        dist = ones(size(fileInfo.overlayDefaultThermal,1),size(fileInfo.overlayDefaultThermal,2))*objDist;
     end 
     
     % determine reflected temperature from downward-looking pyrgeometer (Kipp & Zonen CNR4 on barn tower)
