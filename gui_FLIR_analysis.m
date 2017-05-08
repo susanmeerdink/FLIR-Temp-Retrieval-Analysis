@@ -151,9 +151,6 @@ else
         for i = 1:size(M,1)
             if strcmp(new_table(l,1), table2cell(M(i,1))) == 1 || strcmp(new_table(l,1), strcat(table2cell(M(i,1)),'.jpg')) == 1
                 new_table(l,2) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,2)))));
-                new_table(l,3) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,3)))));
-                new_table(l,4) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,4)))));
-                new_table(l,5) = cellstr(sprintf('%0.2f',cell2mat(table2cell(M(i,5)))));
             else
                 continue
             end
@@ -344,7 +341,6 @@ for img = 1: size(fileInfo,2) %loop through images
     imwrite(imgFrac,cmap,fname);
     
     % Step 2: Assigning emissivity values to classified image and Downwelling Radiance
-    % Date April 01, 2015; Written by Saleem Ullah; Version 01
     imgEmis = imgFrac;
     imgEmis(imgEmis == 1) = str2num(get(handles.EM_NPV,'String')); % Assigning emissivity values to class 'NPV'
     imgEmis(imgEmis == 2) = str2num(get(handles.EM_Shade,'String')); % Assigning emissivity values to class 'Shade'
@@ -353,46 +349,19 @@ for img = 1: size(fileInfo,2) %loop through images
     sig = (5.670373*1e-08); % Stefen boltzmen constant
     
     % Step 2: Get correction factors from table
-    if isempty(cell2mat(table(img,2))) == 1
-        height = fileInfo{img}.objDist;
-    else
-        height = str2num(cell2mat(table(img,2))); % Camera height in meters
-    end
-    if isempty(cell2mat(table(img,5))) ==1
-        airT = 20;
-    else
-        airT = str2num(cell2mat(table(img,5))); % Air temperature of environment in Celsius
-    end
-    
-    if isempty(cell2mat(table(img,3))) == 1 && isempty(cell2mat(table(img,4))) == 1 % If both are empty
-        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT};
-        ldw = 436.0;
-    elseif isempty(cell2mat(table(img,3))) == 1 && isempty(cel2mat(table(img,4))) == 0
-        rh = str2num(cell2mat(table(img,3))); % Relative Humidity in percent
-        ldw = 436.0;
-        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'RH',rh};
-    elseif isempty(cell2mat(table(img,3))) == 0 && isempty(cell2mat(table(img,4))) == 1
-        ldw = str2num(cell2mat(table(img,4))); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
-        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'longwave',ldw};
-    else % If both are in the table
-        rh = str2num(cell2mat(table(img,3))); % Relative Humidity in percent
-        ldw = str2num(cell2mat(table(img,4))); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
-        corrFactors = {'object distance',height,'emissivity map',imgEmis,'air temperature',airT,'RH',rh,'longwave',ldw};
-    end
+    ldw = str2num(cell2mat(table(img,2))); % Down welling radiance. It should be change according to the Radiometer reading at time of Image acquisition
 
     % Step 3: Calculate Exitance of image (assuming blackbody aka emissivity of 1)
-    imgTempCorrFactors = integer2temp(fileInfo{img},true,corrFactors);
-    
     % Code for Dar's Exitance Images and Intermediate Temperature Products
     imgTempUnCor = (fileInfo{img}.B./log(fileInfo{img}.R1./(fileInfo{img}.R2.*(fileInfo{img}.overlayDefaultThermal + fileInfo{img}.O))+fileInfo{img}.F));
     imgExitBB = (sig*((imgTempUnCor).^4)); % Exitance calculated from Temperature at BlackBody
     imgExit95Emiss = imgExitBB - ((1-0.95)*ldw); % Exitance calculated from Temperature at 0.95 Emissivity
     imgExitSurfEmiss = (imgExitBB -((1-imgEmis).*ldw)); % Retriving surface Exitance using pixel based emissivity and correcting for DWR 
     imgTemp95Emiss = (imgExitBB/(sig*0.95)).^0.25; % Retriving surface temperature using 0.95 Emissivity
-    %imgTempSurfEmiss = (imgExitSurfEmiss./(imgEmis.*sig)).^0.25; % Surface Temperature using pixel based emissivity and applying DWR corrections
+    imgTempSurfEmiss = (imgExitSurfEmiss./(imgEmis.*sig)).^0.25; % Surface Temperature using pixel based emissivity and applying DWR corrections
     
     %Get Temperature Stats 
-    tempStats(img,:) = [mean(mean(imgTempCorrFactors)),min(min(imgTempCorrFactors)),max(max(imgTempCorrFactors)), ...
+    tempStats(img,:) = [mean(mean(imgTempSurfEmiss)),min(min(imgTempSurfEmiss)),max(max(imgTempSurfEmiss)), ...
         mean(mean(imgExitBB)),min(min(imgExitBB)),max(max(imgExitBB)), ...
         mean(mean(imgExit95Emiss)),min(min(imgExit95Emiss)),max(max(imgExit95Emiss)), ...
         mean(mean(imgExitSurfEmiss)),min(min(imgExitSurfEmiss)),max(max(imgExitSurfEmiss)), ...
@@ -401,15 +370,15 @@ for img = 1: size(fileInfo,2) %loop through images
         
     %DISPLAY Temp Correction RESULTS
     %figuring out cmin and cmax for color bar
-    if min(min(imgTempUnCor)) < min(min(imgTempCorrFactors))
+    if min(min(imgTempUnCor)) < min(min(imgTempSurfEmiss))
         cmin = min(min(imgTempUnCor));
     else
-        cmin = min(min(imgTempCorrFactors));
+        cmin = min(min(imgTempSurfEmiss));
     end
-    if max(max(imgTempUnCor)) > max(max(imgTempCorrFactors))
+    if max(max(imgTempUnCor)) > max(max(imgTempSurfEmiss))
         cmax = max(max(imgTempUnCor));
     else
-        cmax = max(max(imgTempCorrFactors));
+        cmax = max(max(imgTempSurfEmiss));
     end
     
     %Plot original temperature image
@@ -431,7 +400,7 @@ for img = 1: size(fileInfo,2) %loop through images
     subplot(1,2,2) %Temperature Correction
     hold on
     title([titleName, ' Temp Correction'],'Interpreter','none')
-    imagesc(imgTempCorrFactors); %Display image with scaled colors
+    imagesc(imgTempSurfEmiss); %Display image with scaled colors
     colormap 'hot'
     caxis([cmin, cmax])
     h2 = colorbar;
@@ -447,15 +416,15 @@ for img = 1: size(fileInfo,2) %loop through images
     % Output Temperature results
     saveas(gca, strcat(cflder,titleName,'_Temp_Orig&Cor.jpg'))
     fname = strcat(cflder,titleName,'_Temp');
-    csvwrite(strcat(fname,'.csv'),imgTempCorrFactors)
-    outImage = mat2gray(round(imgTempCorrFactors),[min(min(imgTempCorrFactors)) max(max(imgTempCorrFactors))]);
+    csvwrite(strcat(fname,'.csv'),imgTempSurfEmiss)
+    outImage = mat2gray(round(imgTempSurfEmiss),[min(min(imgTempSurfEmiss)) max(max(imgTempSurfEmiss))]);
     imwrite(outImage,strcat(fname,'.jpg'));
     
     %Output Exitance results
-%     fname = strcat(cflder,titleName,'_Exitance');
-%     csvwrite(strcat(fname,'.csv'),imgExitSurfEmiss)
-%     outImage = mat2gray(round(imgExitSurfEmiss),[min(min(imgExitSurfEmiss)) max(max(imgExitSurfEmiss))]);
-%     imwrite(outImage,strcat(fname,'.jpg'));
+    fname = strcat(cflder,titleName,'_Exitance');
+    csvwrite(strcat(fname,'.csv'),imgExitSurfEmiss)
+    outImage = mat2gray(round(imgExitSurfEmiss),[min(min(imgExitSurfEmiss)) max(max(imgExitSurfEmiss))]);
+    imwrite(outImage,strcat(fname,'.jpg'));
     
     if get(handles.check_BBExit,'value') == 1 %If the user designated they want the Blackbody exitance image, save it
         fname = strcat(cflder,titleName,'_BBExitance');

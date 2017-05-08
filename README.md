@@ -25,13 +25,9 @@ This code was designed for a FLIR model T450sc (T62101). It may work on other FL
 
 #### STEP 2: LOAD CORRECTION FACTORS:
 1. Create a .csv file that contains correction factors. The format of the csv file follows (see example correction_factor_example.csv):
-	* Header: The first row should contains the column names: Filename, Camera Height, Relative Humidity, Upwelling Longwave, Air Temperature.
+	* Header: The first row should contains the column names: Filename, Downwelling Longwave.
 	* First Column: Filename of images must match the images that you load. Optional: You do not have to add .jpg, but you can add it to the filename. 
-	* Second Column: Camera height in meters. This comes from field collection. If this correction factor is not supplied the program will assume 1 meter.
-	* Third Column: Relative Humidity in percent. 
-	* Fourth Column: Upwelling Longwave Radiation in W/m^2
-	* Fifth Column: Air Temperature in Celisus.
-	* Relative Humidity, Upwelling Longwave Radiation, and Air Temperature can be obtained from the IDEAS meterological station (geog.ucsb.edu/ideas) which updates every 15 minutes.
+	* Fourth Column: Downwelling Longwave Radiation (Can be obtained from the IDEAS meterological station (geog.ucsb.edu/ideas) which updates every 15 minutes.)
 2. Click the "Step2: Load Correction Factors" button. A dialog box will open where you can navigate to the location that contains the .csv file that contains the correction factors.  
 3. The values will populate the table in the gui. You can edit or type in correction factors into the gui. 
 
@@ -53,7 +49,7 @@ This code was designed for a FLIR model T450sc (T62101). It may work on other FL
 	2. The program will automatically save two classified images. An additional folder will be added to the directory containing the original folders titled "Classification" and the images will be saved in this new folder. The first image is the classified image and will be saved as originalname_class.jpg. The second image is from gui figure that includes the cropped image, classified image, and fractional results. This image will be saved as originalname_class_fractions.jpg.
 3. The second part of the analysis is to calculate the corrected temperature product. See Analysis Steps and Equations section for details on calculations.
 	1. A figure will pop up with the original thermal image and the corrected temperature image. 
-	2. The program will automatically save the corrected temperature and exitance images. An additional folder will be added to the directory containing the original folders titled "Temp_Correction". The image will be saved into this new Classification folder with the 2 files: originalfilename_Temp.jpg and originalfilename_Temp.csv
+	2. The program will automatically save the corrected temperature and exitance images. An additional folder will be added to the directory containing the original folders titled "Temp_Correction". The image will be saved into this new Classification folder with the 4 files: originalfilename_Temp.jpg, originalfilename_Temp.csv, originalfilename_Exitance.jpg, and originalfilename_Exitance.csv
 	3. Additional file will be saved to this folder if any of the additional outputs were selected in Step 4: Designate Outputs.
 4. A dialog window will appear saying "Classify next image?". To move on to the next image, hit yes. If you are done, hit no. If you select no, and start the program over, it will reclassify and reanalyze the images listed.
 5. After the program has looped through all the images, the last part of the analysis will output the classification results and the temperature correction results into two separate csv files.
