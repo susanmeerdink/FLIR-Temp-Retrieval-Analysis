@@ -22,7 +22,7 @@ function varargout = gui_FLIR_analysis(varargin)
 
 % Edit the above text to modify the response to help gui_FLIR_analysis
 
-% Last Modified by GUIDE v2.5 04-May-2017 09:28:05
+% Last Modified by GUIDE v2.5 09-May-2017 10:48:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -108,27 +108,33 @@ try %If fileInfo exists (only happens if you are loading in files a second time)
 catch %If fileInfo doesn't exist
     fileInfo = [];
 end 
-
+fnamesList = {};
 %Loop through and open files
 if iscell(fnames) == 0  %If no or one file are selected, fnames is returned as a string NOT cell
     if fnames == 0 %If no files are selected
         errordlg('No Files Selected','Error');
     else %if one file is selected
         %Setting up variables for workspace and future analysis
-        fileInfo{size(fileInfo,1)+1} = irFileOpen(folder,fnames,'jpg','false'); %Opens each image
+        tempFile = irFileOpen(folder,fnames,'jpg','false'); %Opens each image
+        if isfield(tempFile, 'overlayDefaultVisible') == 1 && isfield(tempFile, 'overlayDefaultThermal') == 1
+            fileInfo{size(fileInfo,1)+1} = tempFile;
+            fnamesList{size(fnamesList,1)+1} = fnames;
+        end        
     end   
 else %if multiple files are selected
     for n = 1:size(fnames,2) %Loop through files   
         %Setting up variables for workspace and future analysis
-        fileInfo{size(fileInfo,2)+1} = irFileOpen(folder,fnames{n},'jpg','false'); %Opens each image        
-        
+        tempFile = irFileOpen(folder,fnames{n},'jpg','false'); %Opens each image        
+        if isfield(tempFile, 'overlayDefaultVisible') == 1 && isfield(tempFile, 'overlayDefaultThermal') == 1
+            fileInfo{size(fileInfo,2)+1} = tempFile;
+            fnamesList{size(fnamesList,2)+1} = fnames{n};
+        end        
     end
-
 end
 %Assign final variables to workspace & update GUI
-new_table = cell(size(fnames,2),5);
-new_table(:,1) = fnames;
-new_table(:,2:5) = cell(size(fnames,2),4);
+new_table = cell(size(fnamesList,2),2);
+new_table(:,1) = fnamesList;
+new_table(:,2) = cell(size(fnamesList,1),1);
 set(handles.ImageList,'Data',new_table)
 assignin('base','table',new_table)
 assignin('base','fileInfo',fileInfo)
@@ -146,7 +152,7 @@ new_table = evalin('base','table');
 if isequal(fnames,0)
     errordlg('Input file is not selected!') 
 else
-    M = readtable(strcat(folder,fnames)); % Skip the first row
+    M = readtable(strcat(folder,fnames),'Delimiter',','); % Skip the first row
     for l = 1: size(new_table,1)
         for i = 1:size(M,1)
             if strcmp(new_table(l,1), table2cell(M(i,1))) == 1 || strcmp(new_table(l,1), strcat(table2cell(M(i,1)),'.jpg')) == 1
@@ -248,7 +254,7 @@ fileInfo = evalin('base','fileInfo');
 folder = evalin('base','folder');
 t0 = evalin('base','t0');
 tree = evalin('base','tree');
-table = evalin('base','table'); 
+table = get(handles.ImageList,'Data'); 
 versionTest = version('-release');
 
 % 1. Calculate Fractional Cover for RGB (Visible) Image
@@ -557,3 +563,10 @@ function check_95Temp_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_95Temp
+
+
+% --- Executes during object deletion, before destroying properties.
+function ImageList_DeleteFcn(hObject, eventdata, handles)
+% hObject    handle to ImageList (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
