@@ -477,8 +477,8 @@ outputFile = strcat(folder,'fractional_cover_stats_',datestr(now,'ddmmmyy'),'.cs
 [fileout,path] = uiputfile(outputFile,'Save fractional cover results');
 fid = fopen([path,char(fileout)],'w');
 fprintf(fid,'Filename,NPV,Shade,GV,Flower Blue, Flower Yellow\n');
-for i = 1:size(fractions,1)
-    fprintf(fid,'%s%s',char(fileInfo{img}.name),',');
+for i = 1:size(fileInfo,2)
+    fprintf(fid,'%s%s',char(fileInfo{i}.name),',');
     fprintf(fid,'%f,%f,%f,%f,%f,',fractions(i,(2:6))); %Classification Values (5 vals, cell 5)
     fprintf(fid,'\n');
 end
@@ -494,8 +494,8 @@ fprintf(fid,['Filename, Avg Temperature for Corrected Image, Min Temperature for
     'Avg Exitance for Class Emissivity, Min Exitance for Class Emissivity, Max Exitance for Class Emissivity,' ...
     'Avg Temperature for BB, Min Temperature for BB, Max Temperature for BB,'...
     'Avg Temperature for 0.95 Emissivity, Min Temperature for 0.95 Emissivity, Max Temperature for 0.95 Emissivity \n']);
-for i = 1:size(tempStats,1)
-    fprintf(fid,'%s%s',char(fileInfo{img}.name),',');
+for i = 1:size(fileInfo,2)
+    fprintf(fid,'%s%s',char(fileInfo{i}.name),',');
     fprintf(fid,'%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f',tempStats(i,:));
     fprintf(fid,'\n');
 end
