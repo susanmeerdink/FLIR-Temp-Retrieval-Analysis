@@ -269,7 +269,7 @@ for img = 1: size(fileInfo,2) %loop through images
     sumRGB = sum(all_rgb,2);
     data = [all_rgb,ratioGR,sumRGB];
     
-    if str2num(versionTest(1:4)) < 2015
+    if str2num(versionTest(1:4)) < 2016
         treeOut_x_0 = treeval(t0,data);
         %Warning: treefit will be removed in a future release. Use the predict method of an object returned by fitctree or fitrtree instead.
     else
